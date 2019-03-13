@@ -1,0 +1,10 @@
+<%- include('partials/header') -%>
+<% composes.forEach((compose) => { %>
+    <h1>
+        <%= compose.title %>
+    </h1>
+    <p>
+        <%= compose.content %>
+    </p>
+<% }) %>
+<%- include('partials/footer') -%>
