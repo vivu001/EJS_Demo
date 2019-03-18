@@ -4,6 +4,19 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 
+const mongoose = require('mongoose');
+const mongoDbUser = "mongodb+srv://blogManager:manager2019@cluster0-beqkd.mongodb.net/blogDB";
+mongoose.connect(mongoDbUser, {useNewUrlParser: true});
+
+//create Schema
+const postSchema = new mongoose.Schema({
+    title: String,
+    content: String
+});
+
+//create Model
+const postModel = mongoose.model('post', postSchema);
+
 const homeStartingContent = "Lacus vel facilisis volutpat est velit egestas dui id ornare. Semper auctor neque vitae tempus quam. Sit amet cursus sit amet dictum sit amet justo. Viverra tellus in hac habitasse. Imperdiet proin fermentum leo vel orci porta. Donec ultrices tincidunt arcu non sodales neque sodales ut. Mattis molestie a iaculis at erat pellentesque adipiscing. Magnis dis parturient montes nascetur ridiculus mus mauris vitae ultricies. Adipiscing elit ut aliquam purus sit amet luctus venenatis lectus. Ultrices vitae auctor eu augue ut lectus arcu bibendum at. Odio euismod lacinia at quis risus sed vulputate odio ut. Cursus mattis molestie a iaculis at erat pellentesque adipiscing.";
 const aboutContent = "Hac habitasse platea dictumst vestibulum rhoncus est pellentesque. Dictumst vestibulum rhoncus est pellentesque elit ullamcorper. Non diam phasellus vestibulum lorem sed. Platea dictumst quisque sagittis purus sit. Egestas sed sed risus pretium quam vulputate dignissim suspendisse. Mauris in aliquam sem fringilla. Semper risus in hendrerit gravida rutrum quisque non tellus orci. Amet massa vitae tortor condimentum lacinia quis vel eros. Enim ut tellus elementum sagittis vitae. Mauris ultrices eros in cursus turpis massa tincidunt dui.";
 const contactContent = "Scelerisque eleifend donec pretium vulputate sapien. Rhoncus urna neque viverra justo nec ultrices. Arcu dui vivamus arcu felis bibendum. Consectetur adipiscing elit duis tristique. Risus viverra adipiscing at in tellus integer feugiat. Sapien nec sagittis aliquam malesuada bibendum arcu vitae. Consequat interdum varius sit amet mattis. Iaculis nunc sed augue lacus. Interdum posuere lorem ipsum dolor sit amet consectetur adipiscing elit. Pulvinar elementum integer enim neque. Ultrices gravida dictum fusce ut placerat orci nulla. Mauris in aliquam sem fringilla ut morbi tincidunt. Tortor posuere ac ut consequat semper viverra nam libero.";
@@ -15,10 +28,14 @@ app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static("public"));
 
-var composes = [];
-
 app.get('/', (req, res) => {
-    res.render('home', {homeStarting: homeStartingContent, posts: composes});
+    postModel.find({}, (err, results) => {
+        if (err) {
+            console.log(err);
+        } else {
+            res.render('home', {homeStarting: homeStartingContent, posts: results});
+        }
+    });
 });
 
 app.get('/about', (req, res) => {
@@ -34,17 +51,26 @@ app.get('/compose', (req, res) => {
 });
 
 app.post('/compose', (req, res) => {
-    const post = {title: req.body.title, content: req.body.postBody};
-    composes.push(post);
+    //create a post
+    const post = new postModel({
+        title: req.body.title,
+        content: req.body.postBody
+    });
+    post.save();
     res.redirect('/');
 });
 
-app.get('/posts/:postName', (req, res) => {
-    let matchedComposes = composes.filter(post => post.title.toLowerCase() === req.params.postName.toLowerCase());
-    if (matchedComposes.length !== 0) {
-        console.log("Match found ! ");
-        res.render('post', {composes: matchedComposes});
-    }
+app.get('/posts/:postId', (req, res) => {
+    postModel.find({_id: req.params.postId}, (err, foundComposes) => {
+        if (err) {
+            console.log(err);
+        } else {
+            if (foundComposes.length !== 0) {
+                console.log("Match found ! ");
+                res.render('post', {composes: foundComposes});
+            }
+        }
+    });
 });
 
 app.listen(3000, function () {
